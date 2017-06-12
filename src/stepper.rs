@@ -1,4 +1,53 @@
 use teensy3::bindings;
+use motion::CartesianAxisMove;
+
+const MOVE_BUFFER: usize = 32;
+
+#[derive(Debug)]
+pub struct StepperMotorController {
+    move_buffer: [CartesianAxisMove; MOVE_BUFFER],
+
+    current_position: i32,
+    current_velocity: i32,
+    current_acceleration: i32,
+
+    steps_per_mm: i32,
+
+    stepper_motor: StepperMotor,
+}
+
+impl StepperMotorController {
+    pub fn new(stepper_motor: StepperMotor, steps_per_mm: i32) -> StepperMotorController {
+        StepperMotorController {
+            move_buffer: [CartesianAxisMove {
+                distance: 0.0,
+                velocity: 0.0,
+                acceleration: 0.0,
+            }; MOVE_BUFFER],
+            current_position: 0,
+            current_velocity: 0,
+            current_acceleration: 0,
+
+            steps_per_mm: steps_per_mm,
+
+            stepper_motor: stepper_motor,
+        }
+    }
+
+    pub fn get_current_position(&self) -> f32 {
+        self.current_position as f32 / self.steps_per_mm as f32
+    }
+
+    pub fn get_current_velocity(&self) -> f32 {
+        self.current_velocity as f32 / self.steps_per_mm as f32
+    }
+
+    pub fn get_current_acceleration(&self) -> f32 {
+        self.current_acceleration as f32 / self.steps_per_mm as f32
+    }
+
+    pub fn update(&mut self) {}
+}
 
 #[derive(Debug, PartialEq)]
 pub enum Direction {
@@ -19,54 +68,6 @@ pub struct Limit {
     pub min: i32,
 }
 
-#[derive(Debug)]
-pub struct StepperMotorController {
-    current_position: i32,
-    current_velocity: i32,
-    current_acceleration: i32,
-
-    target_position: i32,
-    target_velocity: i32,
-    target_acceleration: i32,
-
-    stop_acceleration_position: i32,
-    start_acceleration_position: i32,
-
-    stepper_motor: StepperMotor,
-}
-
-impl StepperMotorController {
-    pub fn new(stepper_motor: StepperMotor) -> StepperMotorController {
-        StepperMotorController {
-            current_position: 0,
-            current_velocity: 0,
-            current_acceleration: 0,
-            target_position: 0,
-            target_velocity: 0,
-            target_acceleration: 0,
-            stop_acceleration_position: 0,
-            start_acceleration_position: 0,
-
-            stepper_motor: stepper_motor,
-        }
-    }
-
-    pub fn set_target_position(&mut self, target_position: i32) {
-        self.target_position = target_position;
-    }
-
-    pub fn set_target_velocity(&mut self, target_velocity: i32) {
-        self.target_velocity = target_velocity;
-    }
-
-    pub fn set_target_acceleration(&mut self, target_acceleration: i32) {
-        self.target_acceleration = target_acceleration;
-    }
-
-    pub fn update(&mut self) {
-        
-    }
-}
 
 #[derive(Debug)]
 pub struct StepperMotor {

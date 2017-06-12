@@ -7,6 +7,7 @@
 #[macro_use]
 extern crate teensy3;
 pub mod stepper;
+pub mod motion;
 pub mod printer;
 
 pub mod utils;
