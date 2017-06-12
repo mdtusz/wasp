@@ -1,7 +1,11 @@
 [package]
-name = "firmware"
+name = "rusty-print"
 version = "0.1.0"
 authors = ["Ben Goldberg <jediben97@gmail.com>", "Tim Hollabaugh <timothyhollabaugh@gmail.com>"]
+
+[lib]
+name = "firmware"
+path = "src/lib.rs"
 
 [dependencies]
 teensy3 = "0.1.3"
