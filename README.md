@@ -7,6 +7,8 @@
 ### How to build
 Install:
  - Current nightly build of Rust
+ - Install the arm-unknown-linux-gnueabihf toolchain for rust (using rustup)
+ - libnewlib-arm-none-eabi
  - [Xargo](https://github.com/japaric/xargo)
  - The arm-none-eabi-gcc toolchain
  - Clang, see [rust-bindgen’s requirements](https://github.com/servo/rust-bindgen#requirements).
