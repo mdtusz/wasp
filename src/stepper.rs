@@ -1,52 +1,63 @@
 use teensy3::bindings;
 use motion::CartesianAxisMove;
 
-const MOVE_BUFFER: usize = 32;
+/// The size of the buffer for StepperMotorController
+/// Right now, just store the current move and the next one
+const MOVE_BUFFER: usize = 2;
 
+/// StepperMotorController
+///
+/// Controls a single stepper motor to follow a path of motion::CartesianAxisMove,
+/// one at a time.
+///
+/// The unit of distance is one step of the stepper motor, defined as steps_per_millimeter
+/// The unit of time is microseconds
+/// The unit of velocity is microseconds per step
+///
 #[derive(Debug)]
 pub struct StepperMotorController {
-    move_buffer: [CartesianAxisMove; MOVE_BUFFER],
 
+    /// The current position in steps
     current_position: i32,
+
+    /// The current velocity in microseconds per step
     current_velocity: i32,
-    current_acceleration: i32,
 
-    steps_per_mm: i32,
+    /// The conversion between steps and millimeters
+    steps_per_millimeter: i32,
 
+
+    /// The StepperMotor to control
     stepper_motor: StepperMotor,
 }
 
 impl StepperMotorController {
-    pub fn new(stepper_motor: StepperMotor, steps_per_mm: i32) -> StepperMotorController {
+    /// Create a new StepperMotorController from a StepperMotor, steps_per_millimeter, and
+    /// ticks_per_second
+    pub fn new(stepper_motor: StepperMotor,
+               steps_per_millimeter: i32,
+               ticks_per_second: i32)
+               -> StepperMotorController {
         StepperMotorController {
-            move_buffer: [CartesianAxisMove {
-                distance: 0.0,
-                velocity: 0.0,
-                acceleration: 0.0,
-            }; MOVE_BUFFER],
             current_position: 0,
             current_velocity: 0,
-            current_acceleration: 0,
 
-            steps_per_mm: steps_per_mm,
+            steps_per_millimeter: steps_per_millimeter,
+            ticks_per_second: ticks_per_second,
 
             stepper_motor: stepper_motor,
         }
     }
 
+    /// Get the current position converted to mm
     pub fn get_current_position(&self) -> f32 {
-        self.current_position as f32 / self.steps_per_mm as f32
+        self.current_position as f32 / self.steps_per_millimeter as f32
     }
 
+    /// Get the current velocity converted to mm/sec
     pub fn get_current_velocity(&self) -> f32 {
-        self.current_velocity as f32 / self.steps_per_mm as f32
+        60000000.0/(self.current_velocity * self.steps_per_millimeter)
     }
-
-    pub fn get_current_acceleration(&self) -> f32 {
-        self.current_acceleration as f32 / self.steps_per_mm as f32
-    }
-
-    pub fn update(&mut self) {}
 }
 
 #[derive(Debug, PartialEq)]

@@ -1,8 +1,15 @@
 
 use utils::Point3;
 
+pub enum Command {
+    Move,
+    Temperature,
+
+}
+
 struct Printer {
     current_pos: Point3,
+    command_queue: [Command; 32]
 }
 
 impl Printer {

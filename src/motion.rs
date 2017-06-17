@@ -2,13 +2,6 @@
 use stepper::StepperMotorController;
 use utils::Point3;
 
-#[derive(Debug, Copy, Clone)]
-pub struct CartesianAxisMove {
-    pub distance: f32,
-    pub velocity: f32,
-    pub acceleration: f32,
-}
-
 #[derive(Debug)]
 pub struct CartesianMotionPlanner {
     x_motor: StepperMotorController,
@@ -46,4 +39,10 @@ impl CartesianMotionPlanner {
                     self.z_motor.get_current_acceleration())
     }
 
+    fn add_target(&mut self, point: Point3, feed_rate: f32) {
+        let current_position = self.get_current_position();
+        
+    }
+
 }
+
