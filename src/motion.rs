@@ -39,7 +39,7 @@ impl CartesianMotionPlanner {
                     self.z_motor.get_current_acceleration())
     }
 
-    fn add_target(&mut self, point: Point3, feed_rate: f32) {
+    fn set_target(&mut self, point: Point3, feed_rate: f32) {
         let current_position = self.get_current_position();
         
     }
