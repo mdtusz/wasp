@@ -1,5 +1,4 @@
 use teensy3::bindings;
-use motion::CartesianAxisMove;
 
 /// The size of the buffer for StepperMotorController
 /// Right now, just store the current move and the next one
@@ -26,9 +25,10 @@ pub struct StepperMotorController {
     /// The conversion between steps and millimeters
     steps_per_millimeter: i32,
 
-
     /// The StepperMotor to control
     stepper_motor: StepperMotor,
+
+    ticks_per_second: i32,
 }
 
 impl StepperMotorController {
@@ -56,7 +56,12 @@ impl StepperMotorController {
 
     /// Get the current velocity converted to mm/sec
     pub fn get_current_velocity(&self) -> f32 {
-        60000000.0/(self.current_velocity * self.steps_per_millimeter)
+        60000000.0/ ((self.current_velocity * self.steps_per_millimeter) as f32)
+    }
+
+    /// TODO
+    pub fn get_current_acceleration(&self) -> f32 {
+        0.0
     }
 }
 

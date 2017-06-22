@@ -1,5 +1,5 @@
 [package]
-name = "rusty-print"
+name = "wasp"
 version = "0.1.0"
 authors = ["Ben Goldberg <jediben97@gmail.com>", "Tim Hollabaugh <timothyhollabaugh@gmail.com>"]
 

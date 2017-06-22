@@ -1,5 +1,7 @@
-# Rusty Print
-## A 3D printer driver firmware written in Rust
+# Wasp
+## A 3D printer firmware written in Rust
+
+## Waring: WIP
 
 ### Supported boards
  - Teensy 3.2
