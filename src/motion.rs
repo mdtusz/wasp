@@ -1,13 +1,13 @@
 use math::sqrtf;
-use stepper::StepperMotorController;
+use stepper::StepperMotor;
 use utils::Point3;
 use teensy3::bindings;
 
 #[derive(Debug)]
 pub struct CartesianMotionPlanner {
-    x_motor: StepperMotorController,
-    y_motor: StepperMotorController,
-    z_motor: StepperMotorController,
+    x_motor: StepperMotor,
+    y_motor: StepperMotor,
+    z_motor: StepperMotor,
     max_acceleration: f32,
     max_speed: f32,
     motion_distance: f32,
@@ -21,9 +21,9 @@ pub struct CartesianMotionPlanner {
 }
 
 impl CartesianMotionPlanner {
-    fn new(x_motor: StepperMotorController,
-           y_motor: StepperMotorController,
-           z_motor: StepperMotorController,
+    fn new(x_motor: StepperMotor,
+           y_motor: StepperMotor,
+           z_motor: StepperMotor,
            max_acceleration: f32,
            max_speed: f32)
            -> CartesianMotionPlanner {
@@ -57,11 +57,13 @@ impl CartesianMotionPlanner {
                     self.z_motor.get_current_velocity())
     }
 
+    /*
     fn get_current_acceleration(&self) -> Point3 {
         Point3::new(self.x_motor.get_current_acceleration(),
                     self.y_motor.get_current_acceleration(),
                     self.z_motor.get_current_acceleration())
     }
+    */
 
     fn set_target(&mut self, point: Point3, feed_rate: f32) {
         let current_position = self.get_current_position();

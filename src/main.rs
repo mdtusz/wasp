@@ -16,7 +16,6 @@ use teensy3::serial::Serial;
 use gcode::{Tokenizer, Parser};
 
 use firmware::stepper;
-use firmware::stepper::StepError;
 
 use firmware::utils::Point3;
 
@@ -37,11 +36,13 @@ pub unsafe extern "C" fn main() {
     let mut old_step = now;
 
     // Create stepper motor
+    /*
     let mut stepper_motor = stepper::StepperMotor::new(stepper::Limit { min: 0, max: 100 },
                                                    stepper::Direction::Forward,
                                                    5,
                                                    6,
                                                    5000);
+                                                   */
 
     'main: loop {
         now = bindings::micros();
@@ -63,6 +64,7 @@ pub unsafe extern "C" fn main() {
             old = now;
         }
 
+        /*
         if now - old_step >= 10000 {
             //println!("Stepping Motor");
             match stepper_motor.step() {
@@ -84,6 +86,7 @@ pub unsafe extern "C" fn main() {
         }
 
         stepper_motor.update();
+        */
 
         match ser.try_read_byte() {
             Ok(msg) => {
