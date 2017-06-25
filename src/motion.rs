@@ -1,4 +1,4 @@
-
+use math::sqrtf;
 use stepper::StepperMotorController;
 use utils::Point3;
 
@@ -7,17 +7,38 @@ pub struct CartesianMotionPlanner {
     x_motor: StepperMotorController,
     y_motor: StepperMotorController,
     z_motor: StepperMotorController,
+    max_acceleration: f32,
+    max_speed: f32,
+    motion_distance: f32,
+    delta_x: f32,
+    delta_y: f32,
+    delta_z: f32,
+    top_x_speed: f32,
+    top_y_speed: f32,
+    top_z_speed: f32,
 }
 
 impl CartesianMotionPlanner {
     fn new(x_motor: StepperMotorController,
            y_motor: StepperMotorController,
-           z_motor: StepperMotorController)
+           z_motor: StepperMotorController,
+           max_acceleration: f32,
+           max_speed: f32)
            -> CartesianMotionPlanner {
+
         CartesianMotionPlanner {
             x_motor: x_motor,
             y_motor: y_motor,
             z_motor: z_motor,
+            max_acceleration: max_acceleration,
+            max_speed: max_speed,
+            motion_distance: 0.0,
+            delta_x: 0.0,
+            delta_y: 0.0,
+            delta_z: 0.0,
+            top_x_speed: 0.0,
+            top_y_speed: 0.0,
+            top_z_speed: 0.0,
         }
     }
 
@@ -41,8 +62,24 @@ impl CartesianMotionPlanner {
 
     fn set_target(&mut self, point: Point3, feed_rate: f32) {
         let current_position = self.get_current_position();
-        
+        self.delta_x = point.x - current_position.x;
+        self.delta_y = point.y - current_position.y;
+        self.delta_z = point.z - current_position.z;
+        self.motion_distance = sqrtf(self.delta_x * self.delta_x + self.delta_y * self.delta_y +
+                                self.delta_z * self.delta_z)
     }
 
-}
+    fn get_axis_seed(&self, delta: f32, top_speed: f32) -> f32 {
+        let speedup_distance = top_speed / self.max_acceleration;
+        if speedup_distance < delta / 2.0 {
+            (delta / 2.0) * self.max_acceleration
+        } else {
+            top_speed
+        }
+    }
 
+    #[inline]
+    fn translate_to_axis(&self, delta: f32, top_speed: f32) -> f32 {
+        (top_speed * delta) / self.motion_distance
+    }
+}
