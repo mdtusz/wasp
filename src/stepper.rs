@@ -1,173 +1,141 @@
 use teensy3::bindings;
 
-/// The size of the buffer for StepperMotorController
-/// Right now, just store the current move and the next one
-const MOVE_BUFFER: usize = 2;
+const PULSE_LENGTH: u32 = 50;
 
-/// StepperMotorController
-///
-/// Controls a single stepper motor to follow a path of motion::CartesianAxisMove,
-/// one at a time.
-///
-/// The unit of distance is one step of the stepper motor, defined as steps_per_millimeter
-/// The unit of time is microseconds
-/// The unit of velocity is microseconds per step
-///
-#[derive(Debug)]
-pub struct StepperMotorController {
-
-    /// The current position in steps
-    current_position: i32,
-
-    /// The current velocity in microseconds per step
-    current_velocity: i32,
-
-    /// The conversion between steps and millimeters
-    steps_per_millimeter: i32,
-
-    /// The StepperMotor to control
-    stepper_motor: StepperMotor,
-
-    ticks_per_second: i32,
-}
-
-impl StepperMotorController {
-    /// Create a new StepperMotorController from a StepperMotor, steps_per_millimeter, and
-    /// ticks_per_second
-    pub fn new(stepper_motor: StepperMotor,
-               steps_per_millimeter: i32,
-               ticks_per_second: i32)
-               -> StepperMotorController {
-        StepperMotorController {
-            current_position: 0,
-            current_velocity: 0,
-
-            steps_per_millimeter: steps_per_millimeter,
-            ticks_per_second: ticks_per_second,
-
-            stepper_motor: stepper_motor,
-        }
-    }
-
-    /// Get the current position converted to mm
-    pub fn get_current_position(&self) -> f32 {
-        self.current_position as f32 / self.steps_per_millimeter as f32
-    }
-
-    /// Get the current velocity converted to mm/sec
-    pub fn get_current_velocity(&self) -> f32 {
-        60000000.0/ ((self.current_velocity * self.steps_per_millimeter) as f32)
-    }
-
-    /// TODO
-    pub fn get_current_acceleration(&self) -> f32 {
-        0.0
-    }
-}
-
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Copy, Debug)]
 pub enum Direction {
-    Forward,
-    Backward,
+    Forward = 1,
+    Backward = -1,
 }
-
-#[derive(Debug)]
-pub enum StepError {
-    Limit(Direction),
-    MidPulse,
-    Unknown,
-}
-
-#[derive(Debug)]
-pub struct Limit {
-    pub max: i32,
-    pub min: i32,
-}
-
 
 #[derive(Debug)]
 pub struct StepperMotor {
-    step: i32,
-    step_limit: Limit,
-    direction: Direction,
+    /// The current step that the motor is at
+    current_step: i32,
+
+    /// The current direction
+    current_direction: Direction,
+
+    /// The current traveling velocity in microseconds per step
+    microseconds_per_step: u32,
+
+    /// The number of steps per millimeter
+    steps_per_millimeter: i32,
+
+    /// The minimum of the stepper motor in mm
+    min_travel: f32,
+
+    /// The maximum of the stepper motor in mm
+    max_travel: f32,
+
+    /// The last time we stepped
     last_step: u32,
-    step_pin: u8,
-    direction_pin: u8,
-    pulse_length: u32,
+
+    /// If we are in the middle of a pulse
     mid_pulse: bool,
+
+    /// The pin to use for stepping
+    step_pin: u8,
+
+    /// The pin to use for direction
+    direction_pin: u8,
 }
 
 impl StepperMotor {
-    pub fn new(limit: Limit,
-               dir: Direction,
+    /// Make a new stepper motor
+    pub fn new(steps_per_millimeter: i32,
+               min_travel: f32,
+               max_travel: f32,
                step_pin: u8,
-               direction_pin: u8,
-               pulse_length: u32)
+               direction_pin: u8)
                -> StepperMotor {
-
-        unsafe {
-            bindings::pinMode(step_pin, bindings::OUTPUT as u8);
-            bindings::pinMode(direction_pin, bindings::OUTPUT as u8);
-        }
-
         StepperMotor {
-            step: 0,
-            step_limit: limit,
-            direction: dir,
+            current_step: 0,
+            current_direction: Direction::Backward,
+            microseconds_per_step: 0,
+            steps_per_millimeter: steps_per_millimeter,
+            min_travel: min_travel,
+            max_travel: max_travel,
             last_step: 0,
+            mid_pulse: false,
             step_pin: step_pin,
             direction_pin: direction_pin,
-            pulse_length: pulse_length,
-            mid_pulse: true,
         }
     }
 
+    /// Return the current position in mm
+    pub fn get_current_position(&self) -> f32 {
+        self.current_step as f32 / self.steps_per_millimeter as f32
+    }
 
-    pub fn step(&mut self) -> Result<(), StepError> {
-        if self.mid_pulse {
-            return Result::Err(StepError::MidPulse);
-        } else if self.direction == Direction::Forward && self.step >= self.step_limit.max {
-            return Result::Err(StepError::Limit(Direction::Forward));
-        } else if self.direction == Direction::Backward && self.step <= self.step_limit.min {
-            return Result::Err(StepError::Limit(Direction::Backward));
+    /// Return the current velocity in mm/min
+    pub fn get_current_velocity(&self) -> f32 {
+        self.current_direction as i32 as f32 * 60000000.0 /
+        (self.microseconds_per_step as i32 * self.steps_per_millimeter) as f32
+    }
+
+    /// Get the current direction
+    pub fn get_current_direction(&self) -> Direction {
+        self.current_direction
+    }
+
+    /// Set the current position (As in G92)
+    pub fn set_current_position(&mut self, position: f32) {
+        self.current_step = (position * self.steps_per_millimeter as f32) as i32;
+    }
+
+    /// Set the current velocity in mm/min
+    pub fn set_current_velocity(&mut self, velocity: f32) {
+
+        if velocity > 0.0 {
+            self.set_current_direction(Direction::Forward);
+            self.microseconds_per_step =
+                (60000000.0 / (velocity * self.steps_per_millimeter as f32)) as u32;
+        } else if velocity < 0.0 {
+            self.set_current_direction(Direction::Backward);
+            self.microseconds_per_step =
+                (60000000.0 / (-velocity * self.steps_per_millimeter as f32)) as u32;
         } else {
-            unsafe {
+            self.microseconds_per_step = 0;
+        }
+    }
+
+    /// Set the current direction
+    pub fn set_current_direction(&mut self, direction: Direction) {
+        self.current_direction = direction;
+
+        match direction {
+            Direction::Forward => unsafe {
+                bindings::digitalWrite(self.direction_pin, bindings::HIGH as u8)
+            },
+            Direction::Backward => unsafe {
+                bindings::digitalWrite(self.direction_pin, bindings::LOW as u8)
+            },
+        }
+    }
+
+    /// Update everything
+    pub fn update(&mut self) {
+
+        unsafe {
+            let now = bindings::micros();
+
+            // Check if needed to start next step
+            if now - self.last_step > self.microseconds_per_step {
                 bindings::digitalWrite(self.step_pin, bindings::HIGH as u8);
-                self.last_step = bindings::micros();
-            }
-            match &self.direction {
-                &Direction::Forward => self.step += 1,
-                &Direction::Backward => self.step -= 1,
-            }
-            self.mid_pulse = true;
-            return Result::Ok(());
-        }
-    }
 
-    pub unsafe fn update(&mut self) {
-        if self.mid_pulse && (bindings::micros() - self.last_step >= self.pulse_length) {
-            bindings::digitalWrite(self.step_pin, bindings::LOW as u8);
-            self.mid_pulse = false;
-        }
-    }
+                self.mid_pulse = true;
 
-    pub fn get_step(&self) -> i32 {
-        self.step
-    }
-
-    pub fn change_direction(&mut self) {
-        match &self.direction {
-            &Direction::Forward => {
-                unsafe {
-                    bindings::digitalWrite(self.direction_pin, bindings::LOW as u8);
-                }
-                self.direction = Direction::Backward;
+                self.last_step = now;
             }
-            &Direction::Backward => {
-                unsafe {
-                    bindings::digitalWrite(self.direction_pin, bindings::HIGH as u8);
-                }
-                self.direction = Direction::Forward;
+
+            // Check if needed to end step pulse
+            if self.mid_pulse && now - self.last_step > PULSE_LENGTH {
+                bindings::digitalWrite(self.step_pin, bindings::LOW as u8);
+
+                self.mid_pulse = false;
+
+                self.last_step = now;
             }
         }
     }
