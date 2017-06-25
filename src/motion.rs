@@ -1,6 +1,7 @@
 use math::sqrtf;
 use stepper::StepperMotorController;
 use utils::Point3;
+use teensy3::bindings;
 
 #[derive(Debug)]
 pub struct CartesianMotionPlanner {
@@ -16,6 +17,7 @@ pub struct CartesianMotionPlanner {
     top_x_speed: f32,
     top_y_speed: f32,
     top_z_speed: f32,
+    start_time: u32,
 }
 
 impl CartesianMotionPlanner {
@@ -39,6 +41,7 @@ impl CartesianMotionPlanner {
             top_x_speed: 0.0,
             top_y_speed: 0.0,
             top_z_speed: 0.0,
+            start_time: 0,
         }
     }
 
@@ -66,10 +69,23 @@ impl CartesianMotionPlanner {
         self.delta_y = point.y - current_position.y;
         self.delta_z = point.z - current_position.z;
         self.motion_distance = sqrtf(self.delta_x * self.delta_x + self.delta_y * self.delta_y +
-                                self.delta_z * self.delta_z)
+                                     self.delta_z * self.delta_z);
+        self.top_x_speed = self.translate_to_axis(self.delta_x,
+                                                  self.get_axis_top_speed(self.delta_x, feed_rate));
+        self.top_y_speed = self.translate_to_axis(self.delta_y,
+                                                  self.get_axis_top_speed(self.delta_y, feed_rate));
+        self.top_z_speed = self.translate_to_axis(self.delta_z,
+                                                  self.get_axis_top_speed(self.delta_z, feed_rate));
+        self.start_time = unsafe { bindings::micros() };
     }
 
-    fn get_axis_seed(&self, delta: f32, top_speed: f32) -> f32 {
+    fn update(&mut self) {
+        let now = unsafe { bindings::micros() } - self.start_time;
+        let current_speed = now as f32 * self.max_acceleration;
+
+    }
+
+    fn get_axis_top_speed(&self, delta: f32, top_speed: f32) -> f32 {
         let speedup_distance = top_speed / self.max_acceleration;
         if speedup_distance < delta / 2.0 {
             (delta / 2.0) * self.max_acceleration
@@ -79,7 +95,7 @@ impl CartesianMotionPlanner {
     }
 
     #[inline]
-    fn translate_to_axis(&self, delta: f32, top_speed: f32) -> f32 {
-        (top_speed * delta) / self.motion_distance
+    fn translate_to_axis(&self, delta: f32, axis_speed: f32) -> f32 {
+        (axis_speed * delta) / self.motion_distance
     }
 }
