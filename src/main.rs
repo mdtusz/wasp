@@ -33,16 +33,21 @@ pub unsafe extern "C" fn main() {
     let mut i = 0;
     let mut now = 0;
     let mut old = now;
-    let mut old_step = now;
 
-    // Create stepper motor
-    /*
-    let mut stepper_motor = stepper::StepperMotor::new(stepper::Limit { min: 0, max: 100 },
-                                                   stepper::Direction::Forward,
-                                                   5,
-                                                   6,
-                                                   5000);
-                                                   */
+    // Create test stepper motor
+    let mut stepper_motor = stepper::StepperMotor::new(4 * 32, 0.0, 100.0, 5, 6);
+
+    match stepper_motor.set_current_velocity(600.0) {
+        Ok(steps) => {
+            println!("Set speed to {} mm/min, or {} microseconds per step",
+                     stepper_motor.get_current_velocity(),
+                     steps);
+        }
+        Err(_) => {
+            println!("Set speed {} mm/min is too fast!",
+                     stepper_motor.get_current_velocity());
+        }
+    }
 
     'main: loop {
         now = bindings::micros();
@@ -54,39 +59,15 @@ pub unsafe extern "C" fn main() {
                 bindings::digitalWrite(LED_PIN, bindings::HIGH as u8);
             }
 
-            let p1 = Point3::new(1.0, 2.0, 3.0);
-            let p2 = Point3::new(3.0, 4.0, 5.0);
-
-            println!("p1: {:?}", p1);
-            println!("p2: {:?}", p2);
-            println!("Add points: {:?}", p1 + p2);
+            println!("{:?}", stepper_motor);
 
             old = now;
         }
 
-        /*
-        if now - old_step >= 10000 {
-            //println!("Stepping Motor");
-            match stepper_motor.step() {
-                Ok(_) => {},
-                Err(err) => {
-                    match err {
-                        StepError::Limit(dir) => {
-                            stepper_motor.change_direction();
-                            //println!("Changing direction");
-                        }
-                        _ => {
-                            //println!("{:?}", err);
-                        }
-                    }
-                }
-            }
-            //println!("Step: {:?}", stepper_motor.get_step());
-            old_step = now;
+        match stepper_motor.update() {
+            Ok(_) => (),
+            Err(direction) => stepper_motor.set_current_direction(!direction)
         }
-
-        stepper_motor.update();
-        */
 
         match ser.try_read_byte() {
             Ok(msg) => {
