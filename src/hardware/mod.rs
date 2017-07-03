@@ -13,3 +13,8 @@ trait HardwareUart {
     fn read_byte(&self) -> Result<u8, &'static str>;
     fn write_bytes(&mut self, bytes: &[u8]) -> Result<(), ()>;
 }
+
+trait HardwareTime {
+    fn delay(&self, micros: u32);
+    fn now(&self) -> u32;
+}
