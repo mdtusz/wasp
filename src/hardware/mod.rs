@@ -8,12 +8,15 @@ trait HardwareGpio<Pin, Mode> {
     fn digital_read(&mut self, pin: Pin) -> Option<bool>;
 }
 
+/// Anything that can provide a hardware Uart to talk to a host
 trait HardwareUart {
     fn readable(&self) -> bool;
     fn read_byte(&self) -> Result<u8, &'static str>;
     fn write_bytes(&mut self, bytes: &[u8]) -> Result<(), ()>;
 }
 
+/// Anything that can provide the time since start and delay
+/// All units are microseconds
 trait HardwareTime {
     fn delay(&self, micros: u32);
     fn now(&self) -> u32;
