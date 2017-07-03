@@ -11,4 +11,6 @@ pub mod stepper;
 pub mod motion;
 pub mod printer;
 
+pub mod hardware;
+
 pub mod utils;
