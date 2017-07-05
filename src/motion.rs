@@ -1,13 +1,16 @@
+use core::fmt::Debug;
 use math::sqrtf;
 use stepper::StepperMotor;
 use utils::Point3;
 use teensy3::bindings;
+use hardware::HardwareGpio;
+use hardware::HardwareTime;
 
 #[derive(Debug)]
-pub struct CartesianMotionPlanner {
-    x_motor: StepperMotor,
-    y_motor: StepperMotor,
-    z_motor: StepperMotor,
+pub struct CartesianMotionPlanner<'a, H: 'a> {
+    x_motor: StepperMotor<'a, H>,
+    y_motor: StepperMotor<'a, H>,
+    z_motor: StepperMotor<'a, H>,
     max_acceleration: f32,
     max_speed: f32,
     motion_distance: f32,
@@ -23,13 +26,14 @@ pub struct CartesianMotionPlanner {
     end_time: u32,
 }
 
-impl CartesianMotionPlanner {
-    fn new(x_motor: StepperMotor,
-           y_motor: StepperMotor,
-           z_motor: StepperMotor,
-           max_acceleration: f32,
-           max_speed: f32)
-           -> CartesianMotionPlanner {
+impl<'a, H: HardwareGpio + HardwareTime + Debug> CartesianMotionPlanner<'a, H> {
+    fn new(
+        x_motor: StepperMotor<'a, H>,
+        y_motor: StepperMotor<'a,H>,
+        z_motor: StepperMotor<'a,H>,
+        max_acceleration: f32,
+        max_speed: f32,
+    ) -> CartesianMotionPlanner<'a, H> {
 
         CartesianMotionPlanner {
             x_motor: x_motor,
@@ -52,15 +56,19 @@ impl CartesianMotionPlanner {
     }
 
     fn get_current_position(&self) -> Point3 {
-        Point3::new(self.x_motor.get_current_position(),
-                    self.y_motor.get_current_position(),
-                    self.z_motor.get_current_position())
+        Point3::new(
+            self.x_motor.get_current_position(),
+            self.y_motor.get_current_position(),
+            self.z_motor.get_current_position(),
+        )
     }
 
     fn get_current_velocity(&self) -> Point3 {
-        Point3::new(self.x_motor.get_current_velocity(),
-                    self.y_motor.get_current_velocity(),
-                    self.z_motor.get_current_velocity())
+        Point3::new(
+            self.x_motor.get_current_velocity(),
+            self.y_motor.get_current_velocity(),
+            self.z_motor.get_current_velocity(),
+        )
     }
 
     // fn get_current_acceleration(&self) -> Point3 {
@@ -75,16 +83,21 @@ impl CartesianMotionPlanner {
         self.delta_x = point.x - current_position.x;
         self.delta_y = point.y - current_position.y;
         self.delta_z = point.z - current_position.z;
-        self.motion_distance = sqrtf(self.delta_x * self.delta_x + self.delta_y * self.delta_y +
-                                     self.delta_z * self.delta_z);
-        self.top_x_speed = self.translate_to_axis(self.delta_x,
-                                                  self.get_axis_top_speed(self.delta_x, feed_rate));
-        self.top_y_speed = self.translate_to_axis(self.delta_y,
-                                                  self.get_axis_top_speed(self.delta_y, feed_rate));
-        self.top_z_speed = self.translate_to_axis(self.delta_z,
-                                                  self.get_axis_top_speed(self.delta_z, feed_rate));
-        self.transition1 = (feed_rate / self.max_acceleration) as u32;
-        
+        self.motion_distance = sqrtf(
+            self.delta_x * self.delta_x + self.delta_y * self.delta_y + self.delta_z * self.delta_z,
+        );
+        self.top_x_speed = self.translate_to_axis(
+            self.delta_x,
+            self.get_axis_top_speed(self.delta_x, feed_rate),
+        );
+        self.top_y_speed = self.translate_to_axis(
+            self.delta_y,
+            self.get_axis_top_speed(self.delta_y, feed_rate),
+        );
+        self.top_z_speed = self.translate_to_axis(
+            self.delta_z,
+            self.get_axis_top_speed(self.delta_z, feed_rate),
+        );
         self.start_time = unsafe { bindings::micros() };
     }
 

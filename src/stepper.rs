@@ -1,5 +1,10 @@
 use core::ops::Not;
-use teensy3::bindings;
+use core::fmt::Debug;
+//use teensy3::bindings;
+use teensy3::util::PinMode;
+
+use hardware::HardwareGpio;
+use hardware::HardwareTime;
 
 const PULSE_LENGTH: u32 = 100;
 
@@ -24,7 +29,7 @@ impl Not for Direction {
 }
 
 #[derive(Debug)]
-pub struct StepperMotor {
+pub struct StepperMotor<'a, H: 'a> {
     /// The current step that the motor is at
     current_step: i32,
 
@@ -60,22 +65,32 @@ pub struct StepperMotor {
 
     /// The pin to use for direction
     direction_pin: u8,
+
+    /// The hardware to use to step the motor
+    hardware: &'a H,
 }
 
-impl StepperMotor {
+impl<'a, H: HardwareGpio + HardwareTime + Debug> StepperMotor<'a, H> {
     /// Make a new stepper motor
-    pub fn new(steps_per_millimeter: i32,
-               min_travel: f32,
-               max_travel: f32,
-               step_pin: u8,
-               direction_pin: u8)
-               -> StepperMotor {
+    pub fn new(
+        steps_per_millimeter: i32,
+        min_travel: f32,
+        max_travel: f32,
+        step_pin: u8,
+        direction_pin: u8,
+        hardware: &H,
+    ) -> StepperMotor<H> {
 
         // Set the step and direction pins to output
+        /*
         unsafe {
             bindings::pinMode(step_pin, bindings::OUTPUT as u8);
             bindings::pinMode(direction_pin, bindings::OUTPUT as u8);
         }
+        */
+
+        hardware.pin_mode(step_pin, PinMode::Output);
+        hardware.pin_mode(direction_pin, PinMode::Output);
 
         StepperMotor {
             current_step: 0,
@@ -90,6 +105,7 @@ impl StepperMotor {
             mid_pulse: false,
             step_pin: step_pin,
             direction_pin: direction_pin,
+            hardware: hardware,
         }
     }
 
@@ -111,7 +127,7 @@ impl StepperMotor {
     /// Return the current velocity in mm/min
     pub fn get_current_velocity(&self) -> f32 {
         self.current_direction as i32 as f32 * 60000000.0 /
-        (self.microseconds_per_step as i32 * self.steps_per_millimeter) as f32
+            (self.microseconds_per_step as i32 * self.steps_per_millimeter) as f32
     }
 
     /// Get the current direction
@@ -187,10 +203,12 @@ impl StepperMotor {
 
         match direction {
             Direction::Forward => unsafe {
-                bindings::digitalWrite(self.direction_pin, bindings::HIGH as u8)
+                //bindings::digitalWrite(self.direction_pin, bindings::HIGH as u8)
+                self.hardware.digital_write(self.direction_pin, true);
             },
             Direction::Backward => unsafe {
-                bindings::digitalWrite(self.direction_pin, bindings::LOW as u8)
+                //bindings::digitalWrite(self.direction_pin, bindings::LOW as u8)
+                self.hardware.digital_write(self.direction_pin, false);
             },
         }
     }
@@ -201,33 +219,49 @@ impl StepperMotor {
     ///     if the stepper would go out of range
     pub fn update(&mut self) -> Result<i32, Direction> {
 
-        let now = unsafe { bindings::micros() };
+        //let now = unsafe { bindings::micros() };
+        let now = self.hardware.now();
 
         // Check if needed to start next step
         if now - self.last_step > self.microseconds_per_step {
 
-            if self.current_step == self.max_steps {
-                return Result::Err(Direction::Forward);
-            } else if self.current_step == self.min_steps {
-                return Result::Err(Direction::Backward);
-            } else {
-
-                unsafe {
-                    bindings::digitalWrite(self.step_pin, bindings::HIGH as u8);
+            match self.current_direction {
+                Direction::Forward => {
+                    if self.current_step == self.max_steps {
+                        return Result::Err(Direction::Forward);
+                    }
                 }
-
-                self.mid_pulse = true;
-                self.last_step = now;
+                Direction::Backward => {
+                    if self.current_step == self.min_steps {
+                        return Result::Err(Direction::Backward);
+                    }
+                }
             }
+
+            /*
+            unsafe {
+                bindings::digitalWrite(self.step_pin, bindings::HIGH as u8);
+            }
+            */
+
+            self.hardware.digital_write(self.step_pin, true);
+
+            self.mid_pulse = true;
+            self.last_step = now;
         }
 
         // Check if needed to end step pulse
         if self.mid_pulse && now - self.last_step > PULSE_LENGTH {
 
+            /*
             unsafe {
                 bindings::digitalWrite(self.step_pin, bindings::LOW as u8);
             }
+            */
 
+            self.hardware.digital_write(self.step_pin, false);
+
+            self.current_step += self.current_direction as i32;
             self.mid_pulse = false;
             self.last_step = now;
         }
