@@ -15,6 +15,10 @@ use teensy3::bindings;
 use teensy3::serial::Serial;
 use gcode::{Tokenizer, Parser};
 
+use firmware::hardware::HardwareGpio;
+use firmware::hardware::HardwareTime;
+use firmware::hardware::teensy::HardwareTeensy3;
+
 use firmware::stepper;
 
 use firmware::utils::Point3;
@@ -34,10 +38,14 @@ pub unsafe extern "C" fn main() {
     let mut now = 0;
     let mut old = now;
 
-    // Create test stepper motor
-    let mut stepper_motor = stepper::StepperMotor::new(4 * 32, 0.0, 100.0, 5, 6);
+    let hardware = HardwareTeensy3::new();
 
-    match stepper_motor.set_current_velocity(600.0) {
+    hardware.delay(5000000);
+
+    // Create test stepper motor
+    let mut stepper_motor = stepper::StepperMotor::new(4 * 32, 0.0, 35.0, 5, 6, &hardware);
+
+    match stepper_motor.set_current_velocity(1200.0) {
         Ok(steps) => {
             println!("Set speed to {} mm/min, or {} microseconds per step",
                      stepper_motor.get_current_velocity(),
@@ -59,14 +67,17 @@ pub unsafe extern "C" fn main() {
                 bindings::digitalWrite(LED_PIN, bindings::HIGH as u8);
             }
 
-            println!("{:?}", stepper_motor);
+            //println!("{:?}", stepper_motor);
 
             old = now;
         }
 
         match stepper_motor.update() {
             Ok(_) => (),
-            Err(direction) => stepper_motor.set_current_direction(!direction)
+            Err(direction) => {
+                println!("Went too far {:?}!", direction);
+                stepper_motor.set_current_direction(!direction)
+            }
         }
 
         match ser.try_read_byte() {
