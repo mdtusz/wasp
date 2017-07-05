@@ -11,6 +11,7 @@ pub struct CartesianMotionPlanner<'a, H: 'a> {
     x_motor: StepperMotor<'a, H>,
     y_motor: StepperMotor<'a, H>,
     z_motor: StepperMotor<'a, H>,
+    hardware: &'a H,
     max_acceleration: f32,
     max_speed: f32,
     motion_distance: f32,
@@ -31,6 +32,7 @@ impl<'a, H: HardwareGpio + HardwareTime + Debug> CartesianMotionPlanner<'a, H> {
         x_motor: StepperMotor<'a, H>,
         y_motor: StepperMotor<'a,H>,
         z_motor: StepperMotor<'a,H>,
+        hardware: &'a H,
         max_acceleration: f32,
         max_speed: f32,
     ) -> CartesianMotionPlanner<'a, H> {
@@ -39,6 +41,7 @@ impl<'a, H: HardwareGpio + HardwareTime + Debug> CartesianMotionPlanner<'a, H> {
             x_motor: x_motor,
             y_motor: y_motor,
             z_motor: z_motor,
+            hardware: hardware,
             max_acceleration: max_acceleration,
             max_speed: max_speed,
             motion_distance: 0.0,
@@ -98,7 +101,7 @@ impl<'a, H: HardwareGpio + HardwareTime + Debug> CartesianMotionPlanner<'a, H> {
             self.delta_z,
             self.get_axis_top_speed(self.delta_z, feed_rate),
         );
-        self.start_time = unsafe { bindings::micros() };
+        self.start_time = self.hardware.now();
     }
 
     fn update(&mut self) {

@@ -202,11 +202,11 @@ impl<'a, H: HardwareGpio + HardwareTime + Debug> StepperMotor<'a, H> {
         self.current_direction = direction;
 
         match direction {
-            Direction::Forward => unsafe {
+            Direction::Forward => {
                 //bindings::digitalWrite(self.direction_pin, bindings::HIGH as u8)
                 self.hardware.digital_write(self.direction_pin, true);
             },
-            Direction::Backward => unsafe {
+            Direction::Backward => {
                 //bindings::digitalWrite(self.direction_pin, bindings::LOW as u8)
                 self.hardware.digital_write(self.direction_pin, false);
             },
