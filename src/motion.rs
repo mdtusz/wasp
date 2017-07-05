@@ -18,6 +18,9 @@ pub struct CartesianMotionPlanner {
     top_y_speed: f32,
     top_z_speed: f32,
     start_time: u32,
+    transition1: u32,
+    transition2: u32,
+    end_time: u32,
 }
 
 impl CartesianMotionPlanner {
@@ -42,6 +45,9 @@ impl CartesianMotionPlanner {
             top_y_speed: 0.0,
             top_z_speed: 0.0,
             start_time: 0,
+            transition1: 0,
+            transition2: 0,
+            end_time: 0,
         }
     }
 
@@ -57,13 +63,12 @@ impl CartesianMotionPlanner {
                     self.z_motor.get_current_velocity())
     }
 
-    /*
-    fn get_current_acceleration(&self) -> Point3 {
-        Point3::new(self.x_motor.get_current_acceleration(),
-                    self.y_motor.get_current_acceleration(),
-                    self.z_motor.get_current_acceleration())
-    }
-    */
+    // fn get_current_acceleration(&self) -> Point3 {
+    // Point3::new(self.x_motor.get_current_acceleration(),
+    // self.y_motor.get_current_acceleration(),
+    // self.z_motor.get_current_acceleration())
+    // }
+    //
 
     fn set_target(&mut self, point: Point3, feed_rate: f32) {
         let current_position = self.get_current_position();
@@ -78,13 +83,17 @@ impl CartesianMotionPlanner {
                                                   self.get_axis_top_speed(self.delta_y, feed_rate));
         self.top_z_speed = self.translate_to_axis(self.delta_z,
                                                   self.get_axis_top_speed(self.delta_z, feed_rate));
+        self.transition1 = (feed_rate / self.max_acceleration) as u32;
+        
         self.start_time = unsafe { bindings::micros() };
     }
 
     fn update(&mut self) {
         let now = unsafe { bindings::micros() } - self.start_time;
         let current_speed = now as f32 * self.max_acceleration;
+        if now < (self.top_x_speed * self.translate_to_axis(self.delta_x, self.max_acceleration)) as u32 {
 
+        }
     }
 
     fn get_axis_top_speed(&self, delta: f32, top_speed: f32) -> f32 {
