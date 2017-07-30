@@ -1,10 +1,9 @@
 use core::ops::Not;
 use core::fmt::Debug;
-//use teensy3::bindings;
-use teensy3::util::PinMode;
 
 use hardware::HardwareGpio;
 use hardware::HardwareTime;
+use hardware::PinMode;
 
 const PULSE_LENGTH: u32 = 100;
 

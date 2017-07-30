@@ -1,12 +1,17 @@
-use teensy3;
 
-pub mod teensy;
+pub enum PinMode {
+    Input,
+    Output,
+    InputPullup,
+    InputPulldown,
+    OutputOpenDrain
+}
 
 /// Anything that can read and write GPIO pins in hardware
 /// Pin: The type for a pin number
 /// Mode: The type representing the mode of a pin
 pub trait HardwareGpio {
-    fn pin_mode(&self, pin: u8, mode: teensy3::util::PinMode);
+    fn pin_mode(&self, pin: u8, mode: PinMode);
     fn digital_write(&self, pin: u8, val: bool);
     fn digital_read(&self, pin: u8) -> Option<bool>;
 }

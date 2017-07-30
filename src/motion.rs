@@ -1,8 +1,8 @@
+#![allow(unused_must_use)]
 use core::fmt::Debug;
 use math::sqrtf;
 use stepper::StepperMotor;
 use utils::Point3;
-use teensy3::bindings;
 use hardware::HardwareGpio;
 use hardware::HardwareTime;
 

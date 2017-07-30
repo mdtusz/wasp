@@ -4,9 +4,8 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 
-#[macro_use]
-extern crate teensy3;
 extern crate math;
+extern crate gcode;
 pub mod stepper;
 pub mod motion;
 pub mod printer;

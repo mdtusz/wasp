@@ -3,19 +3,6 @@ name = "wasp"
 version = "0.1.0"
 authors = ["Ben Goldberg <jediben97@gmail.com>", "Tim Hollabaugh <timothyhollabaugh@gmail.com>"]
 
-[lib]
-name = "firmware"
-path = "src/lib.rs"
-
 [dependencies]
-teensy3 = "0.1.3"
 gcode = { path = "../gcode-rs"}
 math = { git = "https://github.com/nagisa/math.rs" }
-
-[profile.dev]
-panic = "abort"
-
-[profile.release]
-lto = true
-panic = "abort"
-opt-level = "z"
