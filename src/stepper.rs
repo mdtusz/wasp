@@ -4,6 +4,7 @@ use core::fmt::Debug;
 use hardware::HardwareGpio;
 use hardware::HardwareTime;
 use hardware::PinMode;
+use hardware::PinState;
 
 const PULSE_LENGTH: u32 = 100;
 
@@ -203,11 +204,11 @@ impl<'a, H: HardwareGpio + HardwareTime + Debug> StepperMotor<'a, H> {
         match direction {
             Direction::Forward => {
                 //bindings::digitalWrite(self.direction_pin, bindings::HIGH as u8)
-                self.hardware.digital_write(self.direction_pin, true);
+                self.hardware.digital_write(self.direction_pin, PinState::High);
             },
             Direction::Backward => {
                 //bindings::digitalWrite(self.direction_pin, bindings::LOW as u8)
-                self.hardware.digital_write(self.direction_pin, false);
+                self.hardware.digital_write(self.direction_pin, PinState::Low);
             },
         }
     }
@@ -243,7 +244,7 @@ impl<'a, H: HardwareGpio + HardwareTime + Debug> StepperMotor<'a, H> {
             }
             */
 
-            self.hardware.digital_write(self.step_pin, true);
+            self.hardware.digital_write(self.step_pin, PinState::High);
 
             self.mid_pulse = true;
             self.last_step = now;
@@ -258,7 +259,7 @@ impl<'a, H: HardwareGpio + HardwareTime + Debug> StepperMotor<'a, H> {
             }
             */
 
-            self.hardware.digital_write(self.step_pin, false);
+            self.hardware.digital_write(self.step_pin, PinState::Low);
 
             self.current_step += self.current_direction as i32;
             self.mid_pulse = false;
