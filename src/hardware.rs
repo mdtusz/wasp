@@ -11,9 +11,9 @@ pub enum PinMode {
 /// Pin: The type for a pin number
 /// Mode: The type representing the mode of a pin
 pub trait HardwareGpio {
-    fn pin_mode(&self, pin: u8, mode: PinMode);
-    fn digital_write(&self, pin: u8, val: bool);
-    fn digital_read(&self, pin: u8) -> Option<bool>;
+    fn pin_mode(&mut self, pin: u8, mode: PinMode);
+    fn digital_write(&mut self, pin: u8, val: bool);
+    fn digital_read(&mut self, pin: u8) -> Option<bool>;
 }
 
 /// Anything that can provide a hardware Uart to talk to a host

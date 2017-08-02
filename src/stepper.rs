@@ -66,7 +66,7 @@ pub struct StepperMotor<'a, H: 'a> {
     direction_pin: u8,
 
     /// The hardware to use to step the motor
-    hardware: &'a H,
+    hardware: &'a mut H,
 }
 
 impl<'a, H: HardwareGpio + HardwareTime + Debug> StepperMotor<'a, H> {
@@ -77,7 +77,7 @@ impl<'a, H: HardwareGpio + HardwareTime + Debug> StepperMotor<'a, H> {
         max_travel: f32,
         step_pin: u8,
         direction_pin: u8,
-        hardware: &H,
+        hardware: &mut H,
     ) -> StepperMotor<H> {
 
         // Set the step and direction pins to output
