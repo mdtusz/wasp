@@ -3,8 +3,6 @@ use core::fmt::Debug;
 use gcode::parser::Line;
 use gcode::{Tokenizer, Parser};
 use utils::Point3;
-use hardware::HardwareGpio;
-use hardware::HardwareTime;
 use motion::CartesianMotionPlanner;
 
 static LINE_ENDING: u8 = '\n' as u8;

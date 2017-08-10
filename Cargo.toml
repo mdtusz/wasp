@@ -4,5 +4,6 @@ version = "0.1.0"
 authors = ["Ben Goldberg <jediben97@gmail.com>", "Tim Hollabaugh <timothyhollabaugh@gmail.com>"]
 
 [dependencies]
+hardware = {path = "../hardware-rs"}
 gcode = { path = "../gcode-rs"}
 math = { git = "https://github.com/nagisa/math.rs" }

@@ -4,12 +4,12 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 
+extern crate hardware;
 extern crate math;
 extern crate gcode;
-pub mod stepper;
+//pub mod stepper;
+pub mod motor;
 pub mod motion;
 pub mod printer;
-
-pub mod hardware;
 
 pub mod utils;

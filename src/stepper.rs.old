@@ -1,10 +1,9 @@
 use core::ops::Not;
 use core::fmt::Debug;
 
-use hardware::HardwareGpio;
-use hardware::HardwareTime;
-use hardware::PinMode;
-use hardware::PinState;
+use hardware::peripherals::digital_io::DigitalOutput;
+use hardware::peripherals::digital_io::DigitalValue;
+use hardware::peripherals::time::Time as HardwareTime;
 
 const PULSE_LENGTH: u32 = 100;
 
@@ -29,25 +28,25 @@ impl Not for Direction {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct StepperMotorConfig {
+pub struct StepperMotorConfig<'a, Output: 'a> {
     /// The pin to step with
-    step_pin: u8,
-    
+    step_pin: Output,
+
     /// The pin to use for direction
-    direction_pin: u8,
+    direction_pin: Output,
 
     /// The max limit of the stepper
     min_travel: f32,
-    
+
     /// The min limit of the stepper
     max_travel: f32,
 
     /// The steps per millimeter
-    steps_per_millimeter: i32
+    steps_per_millimeter: i32,
 }
 
 #[derive(Debug)]
-pub struct StepperMotor<'a, H: 'a> {
+pub struct StepperMotor<'a, Time: 'a> {
     /// The current step that the motor is at
     current_step: i32,
 
@@ -69,24 +68,16 @@ pub struct StepperMotor<'a, H: 'a> {
     /// If we are in the middle of a pulse
     mid_pulse: bool,
 
-    /// The config to use
-    config: StepperMotorConfig,
+    /// The time source to use
+    time: &'a HardwareTime,
 
-    /// The hardware to use to step the motor
-    hardware: &'a mut H,
+    /// The config to use
+    config: StepperMotorConfig<'a>,
 }
 
-impl<'a, H: HardwareGpio + HardwareTime + Debug> StepperMotor<'a, H> {
+impl<'a, Time: HardwareTime + Debug> StepperMotor<'a, Time> {
     /// Make a new stepper motor
-    pub fn new(
-        config: StepperMotorConfig,
-        hardware: &mut H,
-    ) -> StepperMotor<H> {
-
-        // Set the step and direction pins to output
-        hardware.pin_mode(config.step_pin, PinMode::Output);
-        hardware.pin_mode(config.direction_pin, PinMode::Output);
-
+    pub fn new(config: StepperMotorConfig, time: Time) -> StepperMotor<'a, Time> {
         StepperMotor {
             current_step: 0,
             current_direction: Direction::Backward,
@@ -95,8 +86,8 @@ impl<'a, H: HardwareGpio + HardwareTime + Debug> StepperMotor<'a, H> {
             max_steps: (config.max_travel * config.steps_per_millimeter as f32) as i32,
             last_step: 0,
             mid_pulse: false,
+            time: time,
             config: config,
-            hardware: hardware,
         }
     }
 
@@ -195,12 +186,14 @@ impl<'a, H: HardwareGpio + HardwareTime + Debug> StepperMotor<'a, H> {
         match direction {
             Direction::Forward => {
                 //bindings::digitalWrite(self.direction_pin, bindings::HIGH as u8)
-                self.hardware.digital_write(self.config.direction_pin, PinState::High);
-            },
+                //self.hardware.digital_write(self.config.direction_pin, PinState::High);
+                self.config.direction_pin.write(DigitalValue::High);
+            }
             Direction::Backward => {
                 //bindings::digitalWrite(self.direction_pin, bindings::LOW as u8)
-                self.hardware.digital_write(self.config.direction_pin, PinState::Low);
-            },
+                //self.hardware.digital_write(self.config.direction_pin, PinState::Low);
+                self.config.direction_pin.write(DigitalValue::Low);
+            }
         }
     }
 
@@ -229,7 +222,8 @@ impl<'a, H: HardwareGpio + HardwareTime + Debug> StepperMotor<'a, H> {
                 }
             }
 
-            self.hardware.digital_write(self.config.step_pin, PinState::High);
+            //self.hardware.digital_write(self.config.step_pin, PinState::High);
+            self.config.step_pin.write(DigitalValue::High);
 
             self.mid_pulse = true;
             self.last_step = now;
@@ -238,7 +232,8 @@ impl<'a, H: HardwareGpio + HardwareTime + Debug> StepperMotor<'a, H> {
         // Check if needed to end step pulse
         if self.mid_pulse && now - self.last_step > PULSE_LENGTH {
 
-            self.hardware.digital_write(self.config.step_pin, PinState::Low);
+            //self.hardware.digital_write(self.config.step_pin, PinState::Low);
+            self.config.step_pin.write(DigitalValue::High);
 
             self.current_step += self.current_direction as i32;
             self.mid_pulse = false;
