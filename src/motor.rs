@@ -24,6 +24,7 @@ impl Not for Direction {
 pub trait Motor {
     fn set_velocity(&mut self, velocity: f32);
     fn set_direction(&mut self, direction: Direction);
+    fn get_position(&self) -> f32;
     fn update(&mut self);
 }
 
@@ -118,6 +119,11 @@ impl<'a> Motor for StepperMotor<'a> {
             Direction::Backward => self.dir_output.write(DigitalValue::Low),
         }
     }
+
+    fn get_position(&self) -> f32 {
+        self.current_step as f32 / self.config.steps_per_millimeter as f32
+    }
+
     fn update(&mut self) {
         //let now = unsafe { bindings::micros() };
         let now = self.time.now();
