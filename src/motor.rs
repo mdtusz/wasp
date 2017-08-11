@@ -25,6 +25,7 @@ pub trait Motor {
     fn set_velocity(&mut self, velocity: f32);
     fn set_direction(&mut self, direction: Direction);
     fn get_position(&self) -> f32;
+    fn get_velocity(&self) -> f32;
     fn update(&mut self);
 }
 
@@ -93,6 +94,7 @@ impl<'a> StepperMotor<'a> {
 
 impl<'a> Motor for StepperMotor<'a> {
     fn set_velocity(&mut self, velocity: f32) {
+        
         if velocity > 0.0 {
             self.set_direction(Direction::Forward);
             let microseconds_per_step =
@@ -122,6 +124,12 @@ impl<'a> Motor for StepperMotor<'a> {
 
     fn get_position(&self) -> f32 {
         self.current_step as f32 / self.config.steps_per_millimeter as f32
+    }
+
+    /// Return the current velocity in mm/min
+    fn get_velocity(&self) -> f32 {
+        self.current_direction as i32 as f32 * 60000000.0 /
+            (self.microseconds_per_step as i32 * self.config.steps_per_millimeter) as f32
     }
 
     fn update(&mut self) {
