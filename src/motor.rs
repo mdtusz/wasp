@@ -96,6 +96,11 @@ impl<'a> StepperMotor<'a> {
             mid_pulse: false,
         }
     }
+
+    /// Return the current microseconds per step (Mostly debugging)
+    pub fn get_microseconds_per_step(&self) -> u32 {
+        self.microseconds_per_step
+    }
 }
 
 impl<'a> Motor for StepperMotor<'a> {
@@ -160,7 +165,7 @@ impl<'a> Motor for StepperMotor<'a> {
         if self.mid_pulse && now - self.last_step > self.config.pulse_length {
 
             //self.hardware.digital_write(self.config.step_pin, PinState::Low);
-            self.step_output.write(DigitalValue::High);
+            self.step_output.write(DigitalValue::Low);
 
             self.current_step += self.current_direction as i32;
             self.mid_pulse = false;
