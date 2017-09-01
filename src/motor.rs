@@ -10,6 +10,12 @@ pub enum Direction {
     Backward = -1,
 }
 
+impl Default for Direction {
+    fn default() -> Direction {
+        Direction::Forward
+    }
+}
+
 impl Not for Direction {
     type Output = Direction;
 
