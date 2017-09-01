@@ -31,12 +31,12 @@ pub trait Motor {
 
 #[derive(Debug, Clone, Copy)]
 pub struct StepperMotorConfig {
-    min_travel: f32,
-    max_travel: f32,
+    pub min_travel: f32,
+    pub max_travel: f32,
 
-    steps_per_millimeter: i32,
+    pub steps_per_millimeter: i32,
 
-    pulse_length: u32,
+    pub pulse_length: u32,
 }
 
 pub struct StepperMotor<'a> {
@@ -70,7 +70,7 @@ pub struct StepperMotor<'a> {
 }
 
 impl<'a> StepperMotor<'a> {
-    fn new(
+    pub fn new(
         step_output: &'a mut DigitalOutput,
         dir_output: &'a mut DigitalOutput,
         time: &'a Time,
