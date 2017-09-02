@@ -36,7 +36,7 @@ pub trait Motor {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct StepperMotorConfig {
+pub struct StepperDriverConfig {
     pub min_travel: f32,
     pub max_travel: f32,
 
@@ -45,13 +45,13 @@ pub struct StepperMotorConfig {
     pub pulse_length: u32,
 }
 
-pub struct StepperMotor<'a> {
+pub struct StepperDriver<'a> {
     step_output: &'a mut DigitalOutput,
     dir_output: &'a mut DigitalOutput,
 
     time: &'a Time,
 
-    config: StepperMotorConfig,
+    config: StepperDriverConfig,
 
     /// The current step that the motor is at
     current_step: i32,
@@ -75,14 +75,14 @@ pub struct StepperMotor<'a> {
     mid_pulse: bool,
 }
 
-impl<'a> StepperMotor<'a> {
+impl<'a> StepperDriver<'a> {
     pub fn new(
         step_output: &'a mut DigitalOutput,
         dir_output: &'a mut DigitalOutput,
         time: &'a Time,
-        config: StepperMotorConfig,
-    ) -> StepperMotor<'a> {
-        StepperMotor {
+        config: StepperDriverConfig,
+    ) -> StepperDriver<'a> {
+        StepperDriver {
             step_output: step_output,
             dir_output: dir_output,
             time: time,
@@ -103,7 +103,7 @@ impl<'a> StepperMotor<'a> {
     }
 }
 
-impl<'a> Motor for StepperMotor<'a> {
+impl<'a> Motor for StepperDriver<'a> {
     fn set_velocity(&mut self, velocity: f32) {
         
         if velocity > 0.0 {
@@ -147,6 +147,17 @@ impl<'a> Motor for StepperMotor<'a> {
         //let now = unsafe { bindings::micros() };
         let now = self.time.now();
 
+        // Check if needed to end step pulse
+        if self.mid_pulse && now - self.last_step > self.config.pulse_length {
+
+            //self.hardware.digital_write(self.config.step_pin, PinState::Low);
+            self.step_output.write(DigitalValue::Low);
+
+            self.current_step += self.current_direction as i32;
+            self.mid_pulse = false;
+            self.last_step = now;
+        }
+
         // Check if needed to start next step
         if now - self.last_step > self.microseconds_per_step {
             if match self.current_direction {
@@ -159,17 +170,6 @@ impl<'a> Motor for StepperMotor<'a> {
                 self.mid_pulse = true;
                 self.last_step = now;
             }
-        }
-
-        // Check if needed to end step pulse
-        if self.mid_pulse && now - self.last_step > self.config.pulse_length {
-
-            //self.hardware.digital_write(self.config.step_pin, PinState::Low);
-            self.step_output.write(DigitalValue::Low);
-
-            self.current_step += self.current_direction as i32;
-            self.mid_pulse = false;
-            self.last_step = now;
         }
     }
 }
