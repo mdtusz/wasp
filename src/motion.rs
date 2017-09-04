@@ -33,7 +33,7 @@ pub struct CartesianMotionPlanner<'a> {
 }
 
 impl<'a> CartesianMotionPlanner<'a> {
-    fn new(
+    pub fn new(
         x_motor: &'a mut Motor,
         y_motor: &'a mut Motor,
         z_motor: &'a mut Motor,
